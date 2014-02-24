@@ -1,0 +1,5 @@
+dump
+config.pl
+sync_html
+sync_cgi-bin
+sync_eoldata

@@ -1,0 +1,316 @@
+#!/usr/bin/perl -I./cron -I./scripts -I./
+
+use CGI;
+use DBI;
+use File::Basename;
+use FindBin qw($Bin);
+use lib "lib";
+use Table;
+use DayRecord;
+use FileRecord;
+use AllRecord;
+use Util;
+require "common.sub.pl";
+require "config/config.pl";
+require "query.include.pl";
+
+# the database info
+my $db_name = dbName();
+my $user = dbUser();
+my $password = dbPassword();
+my $host = dbHost();
+my $resolution_ref = satelliteResolution();
+my $base_url = baseURL();
+my $base_cgi = baseCGI();
+
+my $dbh = connectToDB($db_name,$user,$password,$host);
+#
+# list of available satellites
+my $satellite_ref = getSatelliteListFromDB($dbh);
+
+# list of available sectors 
+my $sector_ref = getSectorListFromDB($dbh);
+
+# list of available years 
+#my $year_ref = getYearListFromDB($dbh, 'all');
+my $year_ref = getYearListFromDB($dbh);
+#my @reversed = reverse(@$year_ref);
+#$year_ref = \@reversed;
+
+# list of available sectors 
+#my $sector_hash_ref = getSectorFromDB($dbh);
+
+# list of days
+my $day_ref = get_list(1,31,2,1);
+
+# list of months 
+my $month_ref = get_list(1,12,2,1);
+
+# list of julian days 
+my $julian_day_ref = get_list(1,366,3,1);
+
+# list of hours 
+my $hour_ref = get_list(0,23,2,1);
+
+# list of minutes 
+my $minute_ref = get_list(0,45,2,15);
+
+# maximum request size
+my $max_size = 3.0;
+
+#my $str = '';
+#foreach $satellite (keys(%$sector_hash_ref)) {
+#  my $yy = $sector_hash_ref->{$satellite};
+#  foreach $zz (@$yy) {
+#    $str .= "$zz<br>";
+#  }
+#}
+my $query = CGI->new();
+
+my $db_info_ref = {'db_name'=>$db_name,
+                   'user'=>$user,
+                   'password'=>$password,
+                   'host'=>$host};
+
+
+if ( $query->param() ) {
+  #pprocess_form($query, $base_url, $base_cgi, $max_size, $dbh, $sector_ref);
+  process_form($query, $base_url, $base_cgi, $max_size, $dbh);
+} else {
+  print_form($satellite_ref, $resolution_ref, $sector_ref, $year_ref, $day_ref,$month_ref, $julian_day_ref, $hour_ref,$minute_ref, $base_url, $base_cgi, $query);
+}
+
+$dbh->disconnect();
+
+#my $query = CGI->new();
+#
+## submitted form
+#if ($query->param()) {
+#  my $choice = $query->param("test");
+#  print $query->h1("you chose: $choice");
+#  return $query->popup_menu(-name=>'test',
+#			    -values=>$year_ref,
+#	                    -default=>$year_ref->[0]);
+#}
+#
+## new form
+#my $js_url = "$base_url/query.js";
+#print $query->header("EOL Satellite Query");
+#print $query->start_html(-title=>'EOL Satellite Query', 
+#                         -bgcolor=>'#FFFFFF',
+#                         -style=>{-src=>"$base_url/css/query.css"},
+#                         -script=>{-type=>'JAVASCRIPT', -src=>$js_url},
+#			 -onLoad=>'javascript:resetForm();');
+#
+#print $query->center();
+#my $method = "POST";
+#my $action = "$base_cgi/".basename($0);
+#my $form_name = "queryform";
+#print $query->startform(-method=>$method,
+#			-action=>$action,
+#                        -name=>$form_name,);
+#
+## header
+#print "<table id='head'>\n";
+#print "  <tr><td>\n";
+#print $query->h1("NCAR/EOL Mass Store Satellite Data Query");
+#print "</td></tr>\n";
+#print "</table>\n";
+#print $query->br();
+#
+#print "<table id='outside'>\n";
+#print "  <tr>\n";
+#print "  <td>\n";
+#print "    <table id='inside'>\n";
+#print "      <tr>\n";
+#print "      <td><b>Begin Date:</b></td>\n";
+#print "      <td>\n";
+#print get_popup($query,'year_frm', 'year_to', 'setCheckBox', 'YYYY', $year_ref);
+#print "      </td>\n";
+#print "      <td>\n";
+#print get_popup($query,'month_frm', 'month_to', 'setCheckBox', 'MM', $month_ref);
+#print "      </td>\n";
+#print "      <td>\n";
+#print get_popup($query,'day_frm', 'day_to', 'setCheckBox', 'DD', $day_ref);
+#print "      </td>\n";
+#print "      </tr>\n";
+#print "    </table>\n";
+#print "  </td>\n";
+#print "  <td>\n";
+#print "    <table id='inside'>\n";
+#print "      <tr>\n";
+#print "      <td><b>End Date:</b></td>\n";
+#print "      <td>\n";
+#print get_popup($query,'year_to', 'year_frm', 'setCheckBox', 'YYYY', $year_ref);
+#print "      </td>\n";
+#print "      <td>\n";
+#print get_popup($query,'month_to', 'month_frm', 'setCheckBox', 'MM', $month_ref);
+#print "      </td>\n";
+#print "      <td>\n";
+#print get_popup($query,'day_to', 'day_frm', 'setCheckBox', 'DD', $day_ref);
+#print "      </td>\n";
+#print "      </tr>\n";
+#print "    </table>\n";
+#print "  </td>\n";
+#print "</table>\n";
+#print "<table id='outside'>\n";
+#print "  <tr>\n";
+#print "  <td>\n";
+#print "    <table id='inside'>\n";
+#print "      <tr>\n";
+#print "      <td><b>Satellite:</b></td>\n";
+#print "      <td>\n";
+##<select name=satellite width=20 onChange="setSectorList( this.form );">
+#my @full_satellite_name;
+#foreach $satellite (@$satellite_ref) { 
+#  $satellite =~ s/^G/GOES-/g;
+#  push(@full_satellite_name, $satellite);
+#}
+#print get_satellite_popup($query,'satellite', 'setSectorList', 'ALL', \@full_satellite_name);
+#print "      </td>\n";
+#print "    </tr>\n";
+#print "    <tr>\n";
+#print "      <td><b>Resolution:</b></td>\n";
+#print "      <td>\n";
+#print get_popup($query,'resolution', '', '', 'ALL', $resolution_ref);
+#print "      </td>\n";
+#print "      </tr>\n";
+#print "    </table>\n";
+#print "  </td>\n";
+#print "  <td>\n";
+#print "    <table id='inside'>\n";
+#print "      <tr>\n";
+#print "      <td>\n";
+##<select name=sector size=7 multiple onChange="checkSelection( this.form )">
+##   print $query->scrolling_list(-name=>'list_name',
+##                                -values=>['eenie','meenie','minie','moe'],
+##                                -default=>['eenie','moe'],
+##	                        -size=>5,
+##	                        -multiple=>'true',
+##                                -labels=>\%labels);
+##
+#print get_scrolling_list($query, 'sector', $sector_ref, 7);
+#print "      </td>\n";
+#print "      </tr>\n";
+#print "    </table>\n";
+#print "  </td>\n";
+#print "</table>\n";
+#
+#
+##***********************************
+##sub get_scrolling_list {
+##
+##  # create a scrolling list
+##  my $query = shift;
+##  my $name = shift;
+##  my $option_ref = shift;
+##  my $size = shift;
+##  my $option_ref = ['test1', 'test2', 'test3'];
+##  my $label_ref = {
+##    '1'=>'test1',
+##    '2'=>'test2',
+##    '3'=>'test3',
+##  };
+##
+##  return $query->scrolling_list(-name=>$name,
+##                                -values=>$option_ref,
+##                                -default=>$option_ref->[0],
+##	                        -size=>$size,
+##	                        -multiple=>'true',
+##                                -labels=>$label_ref);
+##
+##}
+##sub get_list {
+##
+##  my $begin = shift;
+##  my $end = shift;
+##  my $num_digits = shift;
+##  my $increment = shift;
+##
+##  # get a list of values (month, day..etc);
+##  my @arr;
+##  for ($i=$begin; $i<=$end; $i+=$increment) {
+##    push(@arr, sprintf("%02d", $i)) if ( $num_digits == 2 );
+##    push(@arr, sprintf("%03d", $i)) if ( $num_digits == 3 );
+##  }
+##
+##  return \@arr;
+##  
+##}
+##sub get_satellite_popup {
+##
+##  my $query = shift;
+##  my $name = shift;
+##  my $on_change = shift;
+##  my $default = shift;
+##  my $option_ref = shift;
+##
+##  my $js_callback = "javascript:$on_change(this.form);";
+##
+##  my @options = @$option_ref;
+##  unshift(@options, $default);
+##  $option_ref = \@options;
+##
+##  return $query->popup_menu(-name=>$name_from,
+##			    -values=>$option_ref,
+##			    -onChange=>$js_callback,
+##	                    -default=>$option_ref->[0]);
+##
+##}
+##sub print_error {
+##}
+##
+##sub get_popup {
+##
+##  my $query = shift;
+##  my $name_from = shift;
+##  my $name_to = shift;
+##  my $on_change = shift;
+##  my $default = shift;
+##  my $option_ref = shift;
+##
+##  # return the code for the popup menu
+##  my @options = @$option_ref;
+##  unshift(@options, $default);
+##  $option_ref = \@options;
+##
+##  if ( $on_change ne '' ) {
+##    my $js_callback = "javascript:$on_change(this.form.$name_from, this.form.$name_to, '$default');return 1;";
+##    $html = $query->popup_menu(-name=>$name_from,
+##			    -values=>$option_ref,
+##			    -onChange=>$js_callback,
+##	                    -default=>$option_ref->[0]);
+##  } else {
+##    $html = $query->popup_menu(-name=>$name_from,
+##			    -values=>$option_ref,
+##			    -onChange=>$js_callback,
+##	                    -default=>$option_ref->[0]);
+##  }
+##
+##  return $html;
+##
+##
+##
+###  return $query->popup_menu(-name=>$name_from,
+###			    -values=>$option_ref,
+###			    -onChange=>$js_callback,
+###	                    -default=>$option_ref->[0]);
+###
+##}
+##sub print_error {
+##  local($msg) = @_;
+##  print "Content-Type: text/html\n\n";
+##  print "<HTML><HEAD><TITLE>Form Error</TITLE>\n";
+##  print "<h1>ERROR: $msg</h1>\n";
+##  print "</BODY></HTML>\n";
+##  die;
+##}
+##
+##sub print_warning {
+##  local($msg) = @_;
+##  print "Content-Type: text/html\n\n";
+##  print "<HTML><HEAD><TITLE>Form Error</TITLE>\n";
+##  print "<h1>WARNING: $msg</h1>\n";
+##  print "</BODY></HTML>\n";
+##}
+##

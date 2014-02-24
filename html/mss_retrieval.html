@@ -1,0 +1,59 @@
+<html><head><title></title>
+<script src="mss_retrieval.js"></script>
+<script language="javascript">
+
+   function ssubmit_me() {
+
+      /*
+      alert(parent);
+      testit(parent);
+      return;
+      alert('before: ' + self.opener.total_files);
+      self.opener.total_files++;
+      alert('after: ' + self.opener.total_files);
+      return;
+      testit(self.opener.bottom);
+      testit(self);
+      alert('xx: ' + self.document.opener.index);
+      return;
+      testit(self.opener.window);
+      return;
+      alert('before: ' + self.opener.total_files);
+       the bottom frame
+      var bottom_frame = self.opener.bottom;
+      alert('after: ' + self.opener.total_files);
+      */
+
+      // keep track of the filenames from the bottom frame
+      var num_selected_files = bottom_frame.list_of_files.length;
+      alert('num_selected_files: ' + num_selected_files);
+      //alert('before: ' + self.opener.total_files);
+      //alert('test: ' + num_selected_files);
+      for (var i=0; i < num_selected_files; i++ ) {
+         alert('in mss_retrieval.html: ' + bottom_frame.list_of_files[i]);
+         //self.opener.total_files++;
+      }
+      alert('after: ' + self.opener.total_files);
+      return;
+      //self.opener.total_files += bottom_frame.list_of_files.length;
+      //alert('total_files: ' + self.opener.total_files);
+      //index += bottom_frame.list_files.length;
+      //alert('index: ' + index);
+      //alert('xxx: ' + self.opener.bottom.list_of_files.length);
+      //alert('test: ' + self.opener.bottom);
+
+     
+   }
+</script>
+</head>
+<body onLoad="alert('loading mss_retrieval.html');return;">
+<h3>List of requested data files</h3>
+<!--<form name = 'mss_request' method='POST' action = "/cgi-bin/sat_query/msrcp_wrapper.cgi"> -->
+
+<form name='mss_request'>
+   <textarea name="file_list" rows="10" cols="30" scrollable="yes"></textarea><br>
+   <!--<input type='submit' onClick='getinfo();return true;'/>-->
+   <input type='submit' onClick="submit_me();" />
+</form>
+</body>
+</html>

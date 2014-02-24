@@ -1,0 +1,33 @@
+This directory contains the necessary scripts to populate the schedules table
+backfill_db.pl:
+  script that examines the hpss and adds the necessary records
+  into the database
+
+bak_ftable.pl:
+  script that makes a quick back-up of the FileTable in the
+  FileTable_bak table!!
+  NOTES: (not needed..can use mysqldump instead)
+
+clone_schedule_and_sector.pl:
+  script to clone the Schedule and Sector tables
+  for the situation where two different satellites
+  have the same Schedule and Sectors
+  NOTES: not complete
+
+common.pl:
+  file that contains the variables and subroutines common
+  to all routines
+
+find_schedule.pl:
+  script to pull the schedule information
+  from the database and print the output to a file
+
+insert_schedule_into_db.pl:
+  script to read the schedule information and insert
+  it into the database.  Schedule information obtained from:
+  http://www.ssd.noaa.gov/PS/SATS/
+
+list_tables_from_db.pl:
+  script to dump the Sector and Schedule tables
+
+nohup ./run_all.pl 2 > & /dev/null &

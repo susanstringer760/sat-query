@@ -1,0 +1,121 @@
+div#steps {
+  font-weight: bold;
+  font-family: helvitica;
+  font-size: 20px;
+}
+div#margin {
+    background: #fff;
+    border: 6px solid #ccc;
+    #height: 100px;
+    margin: 40px;
+    padding: 20px;
+    #width: 400px;
+}
+table#user_info {
+  border-width: 1px;
+  background-color: lavender;
+  border-style: solid;
+  margin: auto;
+}
+table#head {
+  #border-width: 1px;
+  border-width: 3px;
+  border-style: solid;
+  #border-spacing: 10px;
+  border-spacing: 5px;
+  background-color: #EBEBF5;
+  width: 80%;
+  #font-family: sans-serif;
+  font-family: helvetica;
+  font-size: 30px;
+}
+table#head td {
+  text-align: center;
+}
+table#outside {
+  border-color: #000;
+  border-width: 1px;
+  #border-style: solid;
+  #border-spacing: 10px;
+  border-spacing: 3px;
+  #border: none;
+  border-color: green;
+  border-width: 3px;
+  border-style: solid;
+  font-family: helvetica;
+  font-size: 20px;
+}
+table#outside td {
+  padding: 5px;
+  vertical-align: top;
+}
+table#inside {
+  #border-color: #000;
+  #border-color: red;
+  border: none;
+  #border-width: 3px;
+  #border-style: solid;
+  #border-spacing: 5px;
+  border-spacing: 1px;
+  text-align: center;
+  #font-weight: bold;
+}
+table#inside td {
+  #padding: 1px;
+  padding: 5px;
+  text-align: left;
+}
+#center_text {
+  #text-align: center;
+  text-align: left;
+}
+table#satellite {
+  border-color: #000;
+  border-width: 1px;
+  border-style: solid;
+  border-spacing: 10px;
+  align: center;
+}
+div#head {
+  font-family: sans-serif;
+  font-color: red;
+  font-size: 80px;
+}
+
+h3.error {
+  font-size: 20px;
+  color: red;
+  text-align: center;
+}
+p.error {
+  font-size: 20px;
+  color: red;
+  text-align: center;
+}
+table#warning{
+  font-size: 20px;
+  border-color: #000;
+  border-width: 1px;
+  border-style: solid;
+  border-spacing: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.tab {
+  margin-left: 50px;
+}
+.confirmation {
+  text-align: center;
+  font-size: 20px;
+}
+.center {
+  text-align: center;
+}
+p.warning {
+  font-size: 20px;
+  text-align: center;
+}
+.required {
+  font-size: 10px;
+  color: red;
+}

@@ -1,0 +1,100 @@
+#!/usr/bin/perl -I./cron -I./scripts -I./scripts/config -I./
+#
+use CGI;
+use DBI;
+use File::Basename;
+use File::Path;
+use FindBin qw($Bin);
+require "query.include.pl";
+require "data_retrieval.include.pl";
+require "common.sub.pl";
+require "config.pl";
+
+# for security
+$ENV{"PATH"} = "";
+
+my $hpss_base = hpssBase();
+my $hsi_exe = hsiExe();
+my $base_url = baseURL();
+my $css_fname = cssFname();
+my $base_cgi = baseCGI();
+my $max_request_size = maxRequestSize();
+my $retrieval_js = retrievalJsFname();
+my $hpss_exit_codes = hpssExitCodes();
+#my $base_archive_dir = baseArchiveDir();
+my $mail_cmd = mailCmd();
+my $admin_email = adminEmail();
+my $ftp_dir = ftpDir();
+#my $retrieval_script = retrievalScript();
+my $data_retrieval_script = dataRetrievalScript();
+my $incoming_dir = incomingDir();
+my $finished_dir = finishedDir();
+my $error_dir = errorDir();
+my $log_dir = logDir();
+
+my $data_query = CGI->new();
+
+if ( defined($data_query->param('retrieve_data'))) {
+
+  # check to see if files have been selected
+  my $flag;
+  if (!defined($data_query->param('data_files'))) {
+    no_files_selected($data_query,$css_fname,['Please select files']);
+  } else {
+    # list of files selected from displayFiles subroutine 
+    #my @file_list = $data_query->param('data_files');
+    # print out form to get the information to process request
+    get_request_info($data_query, $css_fname, $retrieval_js,$base_cgi);
+  }
+    
+}
+if ( defined($data_query->param('submit_request'))) {
+
+  my (@admin_warning, @admin_error,@user_confirmation, @user_error, $error_ref);
+
+  my $request_id = get_request_id($data_query);
+  my $user_email = $data_query->param('email');
+
+  # first, check if the maximum request size has been exceeded
+  my $file_and_warning_arr_ref = check_request_size($data_query, $max_request_size);
+
+  # finally, process the files
+  my $constants = { 'retrieval_script'=> $retrieval_script,
+                    'log_dir' => $log_dir,
+                    'mail_cmd' => $mail_cmd,
+                    'request_dir' => $incoming_dir,
+                    'data_retrieval_script' => $data_retrieval_script,
+                    'hpss_exit_codes' => $hpss_exit_codes,
+                    #'css_fname' => $css_fname,
+
+                  };
+
+  my $status = fetch_files_from_hpss($request_id, $data_query,$file_and_warning_arr_ref, $constants);
+
+  # send out emails
+  my @admin_error = @{$status->{'admin_error'}};
+  my @admin_warning= @{$status->{'admin_warning'}};
+  my @user_error = @{$status->{'user_error'}};
+  my @user_confirmation = @{$status->{'user_confirmation'}};
+  if ( $#admin_error >= 0 ) {
+    $subject = "EOL satellite data retrieval error";
+    send_email($data_query, $mail_cmd, $admin_email, $admin_email, $subject, $css_fname, \@admin_error, '');
+  }
+  if ( $#admin_warning >= 0 ) {
+    $subject = "EOL satellite data retrieval warning";
+    send_email($data_query, $mail_cmd, $admin_email, $admin_email, $subject, $css_fname, \@admin_warning, '');
+  }
+  if ($#user_error >= 0 ) {
+    $subject = "EOL satellite data retrieval error";
+    my $flag = 'failed_request';
+    send_email($data_query, $mail_cmd, $user_email, $admin_email, $subject, $css_fname, \@user_error, $flag);
+    # move the request to the error directory
+  }
+  if ($#user_confirmation >= 0 ) {
+    $subject = "EOL satellite data retrieval request";
+    my $flag = 'user_confirmation';
+    send_email($data_query, $mail_cmd, $user_email, $admin_email, $subject, $css_fname, \@user_confirmation, $flag);
+    display_confirmation($data_query, $css_fname, $request_id);
+  }
+  exit();
+}

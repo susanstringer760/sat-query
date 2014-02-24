@@ -1,0 +1,6 @@
+*.bak
+config.pl
+test.pl
+*.txt
+*.rm
+*.ori
